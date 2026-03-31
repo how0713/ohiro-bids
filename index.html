@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OHIRO 標案管理儀表板</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Saira+Condensed:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#1B3A6B;--navy-dark:#122850;--navy-light:#2a4f8f;
+  --orange:#D97757;--orange-lt:#e8916e;--cream:#F5F2EC;
+  --white:#fff;--g1:#f8f7f5;--g2:#eeece8;--g3:#d5d0c8;--g4:#9e9890;--g5:#5a5550;--dark:#1a1815;
+  --green:#2d7d5a;--green-bg:#e8f5ef;--yellow:#c4830a;--yellow-bg:#fef6e4;
+  --red:#c0392b;--red-bg:#fdecea;--blue-bg:#e8f0fb;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--cream);color:var(--dark);min-height:100vh}
+button{cursor:pointer;font-family:'Noto Sans TC',sans-serif}
+input,textarea,select{font-family:'Noto Sans TC',sans-serif}
+
+/* LOGIN */
+#login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:var(--navy-dark);gap:32px}
+.login-brand .wordmark{font-family:'Oswald',sans-serif;font-size:48px;font-weight:700;color:var(--orange);letter-spacing:6px;text-align:center}
+.login-brand .sub{font-size:14px;color:rgba(255,255,255,.5);letter-spacing:3px;margin-top:6px;text-align:center}
+.login-card{background:white;border-radius:16px;padding:40px;text-align:center;width:320px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.login-card h2{font-size:16px;color:var(--navy);margin-bottom:8px}
+.login-card p{font-size:13px;color:var(--g4);margin-bottom:28px;line-height:1.6}
+.google-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px;border-radius:8px;border:1.5px solid var(--g3);background:white;font-size:14px;color:var(--dark);font-weight:500;transition:.15s}
+.google-btn:hover{border-color:var(--navy);background:var(--g1)}
+.google-btn img{width:20px}
+
+/* APP */
+#app{display:none}
+.header{background:var(--navy);color:white;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(27,58,107,.3)}
+.header-brand{display:flex;align-items:center;gap:12px}
+.brand-mark{font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:var(--orange);letter-spacing:2px}
+.brand-sub{font-size:12px;color:rgba(255,255,255,.55);font-weight:300;letter-spacing:1px}
+.header-right{display:flex;align-items:center;gap:14px}
+.header-date{font-size:12px;color:rgba(255,255,255,.6);font-family:'Saira Condensed',sans-serif;letter-spacing:1px}
+.user-info{display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.7)}
+.user-avatar{width:28px;height:28px;border-radius:50%;border:2px solid var(--orange)}
+.logout-btn{font-size:11px;color:rgba(255,255,255,.5);background:none;border:none;padding:4px 8px;border-radius:4px;transition:.15s}
+.logout-btn:hover{background:rgba(255,255,255,.1);color:white}
+
+.summary-strip{background:var(--navy-dark);padding:12px 24px;display:flex;gap:0;overflow-x:auto}
+.summary-item{display:flex;flex-direction:column;align-items:center;padding:0 24px;border-right:1px solid rgba(255,255,255,.1);min-width:80px}
+.summary-item:last-child{border-right:none}
+.summary-num{font-family:'Oswald',sans-serif;font-size:26px;font-weight:700;color:white;line-height:1}
+.summary-num.warn{color:var(--orange)}
+.summary-num.danger{color:#e74c3c}
+.summary-label{font-size:10px;color:rgba(255,255,255,.5);margin-top:3px;white-space:nowrap}
+
+.toolbar{padding:16px 24px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:1100px;margin:0 auto}
+.tab-btn{font-size:13px;font-weight:500;padding:7px 16px;border-radius:20px;border:1.5px solid var(--g3);background:white;color:var(--g5);transition:.15s}
+.tab-btn.active{background:var(--navy);border-color:var(--navy);color:white}
+.tab-btn:hover:not(.active){border-color:var(--navy);color:var(--navy)}
+.add-btn{margin-left:auto;display:flex;align-items:center;gap:6px;padding:8px 18px;border-radius:20px;background:var(--orange);color:white;border:none;font-size:13px;font-weight:700;transition:.15s}
+.add-btn:hover{background:var(--orange-lt)}
+.search-box{display:flex;align-items:center;background:white;border:1.5px solid var(--g3);border-radius:20px;padding:6px 14px;gap:7px}
+.search-box input{border:none;outline:none;font-size:13px;color:var(--dark);width:140px}
+
+.main{padding:16px 24px 60px;display:flex;flex-direction:column;gap:12px;max-width:1100px;margin:0 auto}
+.loading{text-align:center;padding:60px;color:var(--g4);font-size:14px}
+.spinner{width:36px;height:36px;border:3px solid var(--g3);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:60px 20px;color:var(--g4)}
+.empty-state .icon{font-size:48px;margin-bottom:12px}
+
+/* CARD */
+.bid-card{background:white;border-radius:10px;border:1.5px solid var(--g2);overflow:hidden;transition:box-shadow .2s}
+.bid-card:hover{box-shadow:0 4px 20px rgba(27,58,107,.1)}
+.card-header{padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none}
+.status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.status-dot.red{background:#e74c3c;box-shadow:0 0 6px rgba(231,76,60,.5)}
+.status-dot.yellow{background:#f0a500;box-shadow:0 0 6px rgba(240,165,0,.5)}
+.status-dot.green{background:#2ecc71;box-shadow:0 0 6px rgba(46,204,113,.5)}
+.status-dot.blue{background:var(--navy-light)}
+.card-title-block{flex:1;min-width:0}
+.card-title{font-size:15px;font-weight:700;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-meta{font-size:11px;color:var(--g4);margin-top:2px;display:flex;gap:10px;flex-wrap:wrap}
+.card-right{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.card-amount{font-family:'Saira Condensed',sans-serif;font-size:16px;font-weight:600;color:var(--navy)}
+.urgent-badge{font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.urgent-badge.red{background:var(--red-bg);color:var(--red)}
+.urgent-badge.yellow{background:var(--yellow-bg);color:var(--yellow)}
+.urgent-badge.green{background:var(--green-bg);color:var(--green)}
+.urgent-badge.gray{background:var(--g2);color:var(--g5)}
+.progress-ring{position:relative;width:38px;height:38px;flex-shrink:0}
+.progress-ring svg{transform:rotate(-90deg)}
+.progress-ring .track{fill:none;stroke:var(--g2);stroke-width:3}
+.progress-ring .fill{fill:none;stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset .5s}
+.progress-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--navy)}
+.chevron{font-size:14px;color:var(--g3);transition:transform .2s}
+.bid-card.open .chevron{transform:rotate(180deg)}
+
+.card-body{display:none;border-top:1px solid var(--g2);padding:16px 18px}
+.bid-card.open .card-body{display:block}
+.status-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:3px 10px;border-radius:4px;margin-bottom:14px}
+.status-tag.tracking{background:var(--blue-bg);color:var(--navy)}
+.status-tag.awarded{background:#fff3e0;color:#c25a00}
+.status-tag.closed{background:var(--green-bg);color:var(--green)}
+
+.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.info-cell{background:var(--g1);border-radius:6px;padding:10px 12px}
+.info-label{font-size:10px;color:var(--g4);margin-bottom:3px}
+.info-value{font-size:13px;font-weight:500;color:var(--dark)}
+.info-value.ok{color:var(--green)}
+.info-value.warn{color:var(--yellow)}
+
+.section-title{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--g4);text-transform:uppercase;margin:16px 0 8px;display:flex;align-items:center;gap:6px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--g2)}
+
+.checklist{display:flex;flex-direction:column;gap:6px}
+.check-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;border:1.5px solid var(--g2);background:white;cursor:pointer;transition:.15s}
+.check-item:hover{border-color:var(--navy-light);background:#f0f4fb}
+.check-item.done{background:var(--g1);border-color:var(--g2);opacity:.6}
+.check-box{width:18px;height:18px;border-radius:4px;border:2px solid var(--g3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:white;transition:.15s}
+.check-item.done .check-box{background:var(--green);border-color:var(--green)}
+.check-item.done .check-box::after{content:'✓'}
+.check-text{flex:1;font-size:13px;color:var(--dark)}
+.check-item.done .check-text{text-decoration:line-through;color:var(--g4)}
+.check-deadline{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;white-space:nowrap}
+.dl-red{background:var(--red-bg);color:var(--red)}
+.dl-yellow{background:var(--yellow-bg);color:var(--yellow)}
+.dl-green{background:var(--green-bg);color:var(--green)}
+.dl-done{background:var(--g2);color:var(--g4)}
+
+.contact-row,.attach-row{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--g1);border-radius:6px;font-size:12px;color:var(--g5);margin-bottom:6px}
+.attach-link{margin-left:auto;color:var(--navy-light);font-size:11px}
+.attach-link:hover{text-decoration:underline}
+
+.decision-table{width:100%;border-collapse:collapse;font-size:12px}
+.decision-table th{text-align:left;padding:6px 10px;background:var(--navy);color:white;font-weight:500;font-size:11px}
+.decision-table td{padding:7px 10px;border-bottom:1px solid var(--g2);color:var(--g5)}
+.decision-table tr:last-child td{border-bottom:none}
+.decision-table .us{color:var(--navy);font-weight:700}
+
+.notes-box{background:var(--g1);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--g5);line-height:1.6;border-left:3px solid var(--orange)}
+.card-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+.action-btn{font-size:12px;padding:6px 14px;border-radius:6px;border:1.5px solid var(--g3);background:white;color:var(--g5);transition:.15s}
+.action-btn:hover{border-color:var(--navy);color:var(--navy)}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:white;border-radius:16px;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;padding:28px}
+.modal h2{font-size:18px;color:var(--navy);margin-bottom:20px;font-family:'Oswald',sans-serif;letter-spacing:1px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-group label{font-size:11px;color:var(--g4);font-weight:500;letter-spacing:.5px}
+.form-group input,.form-group select,.form-group textarea{padding:9px 12px;border:1.5px solid var(--g3);border-radius:6px;font-size:13px;color:var(--dark);outline:none;transition:.15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--navy)}
+.form-group textarea{resize:vertical;min-height:80px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.modal-cancel{padding:9px 20px;border-radius:8px;border:1.5px solid var(--g3);background:white;color:var(--g5);font-size:13px}
+.modal-submit{padding:9px 24px;border-radius:8px;background:var(--navy);color:white;border:none;font-size:13px;font-weight:700}
+.modal-submit:hover{background:var(--navy-light)}
+
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:white;padding:12px 20px;border-radius:8px;font-size:13px;z-index:300;transform:translateY(80px);opacity:0;transition:all .3s}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{background:var(--green)}
+.toast.error{background:var(--red)}
+
+@media(max-width:600px){
+  .summary-item{padding:0 12px}
+  .info-grid{grid-template-columns:repeat(2,1fr)}
+  .card-amount{font-size:13px}
+  .search-box{display:none}
+  .form-grid{grid-template-columns:1fr}
+  .form-group.full{grid-column:1}
+}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-brand">
+    <div class="wordmark">OHIRO</div>
+    <div class="sub">歐喜樂國際實業社</div>
+  </div>
+  <div class="login-card">
+    <h2>標案管理儀表板</h2>
+    <p>請使用 Google 帳號登入<br>以存取您的標案資料</p>
+    <button class="google-btn" onclick="signIn()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
+      使用 Google 帳號登入
+    </button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="header">
+    <div class="header-brand">
+      <span class="brand-mark">OHIRO</span>
+      <span class="brand-sub">歐喜樂 · 標案管理</span>
+    </div>
+    <div class="header-right">
+      <span class="header-date" id="hdate"></span>
+      <div class="user-info">
+        <img class="user-avatar" id="user-avatar" src="" alt="">
+        <span id="user-name"></span>
+      </div>
+      <button class="logout-btn" onclick="signOut()">登出</button>
+    </div>
+  </div>
+
+  <div class="summary-strip">
+    <div class="summary-item"><span class="summary-num" id="s-tracking">-</span><span class="summary-label">追蹤中</span></div>
+    <div class="summary-item"><span class="summary-num" id="s-active">-</span><span class="summary-label">履約中</span></div>
+    <div class="summary-item"><span class="summary-num warn" id="s-weekdue">-</span><span class="summary-label">本週到期</span></div>
+    <div class="summary-item"><span class="summary-num danger" id="s-overdue">-</span><span class="summary-label">緊急逾期</span></div>
+    <div class="summary-item"><span class="summary-num" id="s-closed">-</span><span class="summary-label">已結案</span></div>
+  </div>
+
+  <div class="toolbar">
+    <button class="tab-btn active" onclick="filterTab(this,'all')">全部</button>
+    <button class="tab-btn" onclick="filterTab(this,'追蹤中')">追蹤中</button>
+    <button class="tab-btn" onclick="filterTab(this,'履約中')">履約中</button>
+    <button class="tab-btn" onclick="filterTab(this,'已結案')">已結案</button>
+    <div class="search-box"><span>🔍</span><input type="text" placeholder="搜尋案名或機關…" oninput="filterSearch(this.value)"></div>
+    <button class="add-btn" onclick="openAddModal()">＋ 新增標案</button>
+  </div>
+
+  <div class="main" id="cards-container">
+    <div class="loading"><div class="spinner"></div>載入標案資料中…</div>
+  </div>
+</div>
+
+<!-- 新增標案 Modal -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <h2>新增標案</h2>
+    <div class="form-grid">
+      <div class="form-group full"><label>案名 *</label><input type="text" id="f-name" placeholder="例：115年度家政教室電力改善工程財物採購案"></div>
+      <div class="form-group"><label>機關完整名稱 *</label><input type="text" id="f-org" placeholder="例：花蓮縣立吉安國民中學"></div>
+      <div class="form-group"><label>機關簡稱 *</label><input type="text" id="f-org-short" placeholder="例：吉安國中"></div>
+      <div class="form-group"><label>年度 *</label><input type="number" id="f-year" value="115"></div>
+      <div class="form-group"><label>採購類型 *</label>
+        <select id="f-type"><option>工程採購</option><option>財物採購</option><option>勞務採購</option></select>
+      </div>
+      <div class="form-group"><label>狀態 *</label>
+        <select id="f-status"><option>追蹤中</option><option>履約中</option><option>已結案</option></select>
+      </div>
+      <div class="form-group"><label>預算金額</label><input type="number" id="f-budget" placeholder="例：500000"></div>
+      <div class="form-group"><label>決標金額</label><input type="number" id="f-awarded" placeholder="得標後填寫"></div>
+      <div class="form-group"><label>截標日</label><input type="date" id="f-deadline"></div>
+      <div class="form-group"><label>履約期限</label><input type="date" id="f-contract-end"></div>
+      <div class="form-group"><label>承辦人姓名</label><input type="text" id="f-contact-name"></div>
+      <div class="form-group"><label>承辦人電話</label><input type="text" id="f-contact-tel"></div>
+      <div class="form-group full"><label>承辦人信箱</label><input type="email" id="f-contact-email"></div>
+      <div class="form-group full"><label>備註</label><textarea id="f-note" placeholder="評審意見、施工限制、注意事項…"></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">取消</button>
+      <button class="modal-submit" onclick="submitAddBid()">新增標案</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── 設定 ── */
+const CFG = {
+  CLIENT_ID:      "18812935524-24k8nh07f7p5uj5nok51evktglqus3ki.apps.googleusercontent.com",
+  SHEET_ID:       "1HbHGmNLfXSw-tWsbJ-LoApm4YaEI8wcp01riqw1Izi0",
+  SCRIPT_URL:     "https://script.google.com/macros/s/AKfycbx7cNk7NXGLP1-3oWoZKh95F3uEHX5bOpJnLwXK-etfTeTctBz-Fw4trLyPHXQPL878/exec",
+  SCOPES:         "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly",
+};
+
+let S = { bids:[], todos:[], bidding:[], filter:"all", search:"", token:null };
+
+/* ── 工具 ── */
+const esc = s => String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const fmt = v => v ? "NT$ "+Number(v).toLocaleString() : "—";
+function daysDiff(ds){
+  if(!ds) return null;
+  const d=new Date(String(ds).replace(/\//g,"-"));
+  return isNaN(d)?null:Math.ceil((d-new Date())/86400000);
+}
+function tdayCls(ds,done){
+  if(done) return "dl-done";
+  const d=daysDiff(ds);
+  if(d===null) return "";
+  if(d<0) return "dl-red";
+  if(d<=3) return "dl-red";
+  if(d<=7) return "dl-yellow";
+  return "dl-green";
+}
+
+/* ── OAuth ── */
+function signIn(){
+  google.accounts.oauth2.initTokenClient({
+    client_id:CFG.CLIENT_ID, scope:CFG.SCOPES,
+    callback(r){
+      if(r.error){showToast("登入失敗","error");return;}
+      S.token=r.access_token;
+      fetch("https://www.googleapis.com/oauth2/v3/userinfo",{headers:{Authorization:"Bearer "+S.token}})
+        .then(r=>r.json()).then(u=>{
+          document.getElementById("user-name").textContent=u.name||"";
+          document.getElementById("user-avatar").src=u.picture||"";
+        });
+      document.getElementById("login-screen").style.display="none";
+      document.getElementById("app").style.display="block";
+      document.getElementById("hdate").textContent=new Date().toLocaleDateString("zh-TW",{year:"numeric",month:"long",day:"numeric",weekday:"short"});
+      loadData();
+    }
+  }).requestAccessToken();
+}
+function signOut(){
+  S.token=null; S.bids=[];S.todos=[];S.bidding=[];
+  document.getElementById("login-screen").style.display="flex";
+  document.getElementById("app").style.display="none";
+}
+
+/* ── Sheets 讀取 ── */
+async function sheetsGet(range){
+  const url=`https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(range)}`;
+  const r=await fetch(url,{headers:{Authorization:"Bearer "+S.token}});
+  if(!r.ok) throw new Error("Sheets API "+r.status);
+  return (await r.json()).values||[];
+}
+function toObjs(rows){
+  if(rows.length<2) return [];
+  const h=rows[1];
+  return rows.slice(2).map(r=>{const o={};h.forEach((k,i)=>o[k]=r[i]||"");return o;}).filter(o=>o["案件ID"]);
+}
+async function loadData(){
+  document.getElementById("cards-container").innerHTML='<div class="loading"><div class="spinner"></div>載入中…</div>';
+  try{
+    const [m,t,b]=await Promise.all([sheetsGet("01_標案主檔"),sheetsGet("02_待辦清單"),sheetsGet("03_決標紀錄")]);
+    S.bids=toObjs(m); S.todos=toObjs(t); S.bidding=toObjs(b);
+    updateSummary(); renderCards();
+  }catch(e){
+    document.getElementById("cards-container").innerHTML=`<div class="empty-state"><div class="icon">⚠️</div><p>載入失敗：${e.message}<br>請確認 Sheets ID 是否正確填入</p></div>`;
+  }
+}
+
+/* ── Apps Script 寫入 ── */
+async function scriptPost(data){
+  const r=await fetch(CFG.SCRIPT_URL,{method:"POST",body:JSON.stringify(data)});
+  const j=await r.json();
+  if(!j.success) throw new Error(j.error);
+  return j.data;
+}
+
+/* ── 摘要 ── */
+function updateSummary(){
+  document.getElementById("s-tracking").textContent=S.bids.filter(b=>b["狀態"]==="追蹤中").length;
+  document.getElementById("s-active").textContent  =S.bids.filter(b=>b["狀態"]==="履約中").length;
+  document.getElementById("s-closed").textContent  =S.bids.filter(b=>b["狀態"]==="已結案").length;
+  let w=0,o=0;
+  S.todos.forEach(t=>{
+    if(t["完成狀態"]==="是"||!t["截止日期"]) return;
+    const d=daysDiff(t["截止日期"]);
+    if(d===null) return;
+    if(d<0) o++; else if(d<=7) w++;
+  });
+  document.getElementById("s-weekdue").textContent=w;
+  document.getElementById("s-overdue").textContent=o;
+}
+
+/* ── 燈號 ── */
+function urgency(bid){
+  if(bid["狀態"]==="已結案") return "green";
+  if(bid["狀態"]==="追蹤中") return "blue";
+  const todos=S.todos.filter(t=>t["案件ID"]===bid["案件ID"]&&t["完成狀態"]!=="是");
+  let m=Infinity;
+  todos.forEach(t=>{const d=daysDiff(t["截止日期"]);if(d!==null&&d<m)m=d;});
+  if(m<0||m<=3) return "red";
+  if(m<=7) return "yellow";
+  return "green";
+}
+function badge(bid){
+  if(bid["狀態"]==="已結案") return{cls:"gray",t:"已結案"};
+  const todos=S.todos.filter(t=>t["案件ID"]===bid["案件ID"]&&t["完成狀態"]!=="是");
+  let m=Infinity;
+  todos.forEach(t=>{const d=daysDiff(t["截止日期"]);if(d!==null&&d<m)m=d;});
+  if(m===Infinity) return{cls:"green",t:"無逾期待辦"};
+  if(m<0)  return{cls:"red",   t:`⚠ 逾期 ${Math.abs(m)} 天`};
+  if(m<=3) return{cls:"red",   t:`⚠ 剩 ${m} 天`};
+  if(m<=7) return{cls:"yellow",t:"本週到期"};
+  return{cls:"green",t:`剩 ${m} 天`};
+}
+function progress(bid){
+  const t=S.todos.filter(t=>t["案件ID"]===bid["案件ID"]);
+  if(!t.length) return 0;
+  return Math.round(t.filter(t=>t["完成狀態"]==="是").length/t.length*100);
+}
+
+/* ── 渲染 ── */
+function renderCards(){
+  let bids=S.bids;
+  if(S.filter!=="all") bids=bids.filter(b=>b["狀態"]===S.filter);
+  if(S.search){
+    const q=S.search.toLowerCase();
+    bids=bids.filter(b=>(b["案名"]||"").toLowerCase().includes(q)||(b["機關完整名稱"]||"").toLowerCase().includes(q)||(b["機關簡稱"]||"").toLowerCase().includes(q));
+  }
+  const c=document.getElementById("cards-container");
+  if(!bids.length){c.innerHTML='<div class="empty-state"><div class="icon">📋</div><p>沒有符合條件的標案</p></div>';return;}
+  c.innerHTML=bids.map(b=>card(b)).join("");
+}
+
+function card(bid){
+  const u=urgency(bid), bg=badge(bid), p=progress(bid);
+  const circ=2*Math.PI*16, off=circ*(1-p/100);
+  const sc=u==="red"?"#D97757":u==="yellow"?"#f0a500":u==="green"?"#2ecc71":"var(--navy-light)";
+  const todos=S.todos.filter(t=>t["案件ID"]===bid["案件ID"]);
+  const bids=S.bidding.filter(b=>b["案件ID"]===bid["案件ID"]);
+  const stag=bid["狀態"]==="追蹤中"?"tracking":bid["狀態"]==="履約中"?"awarded":"closed";
+  const icon=bid["狀態"]==="追蹤中"?"🔍":bid["狀態"]==="履約中"?"📋":"✅";
+
+  const todoHtml=todos.length?todos.map(t=>{
+    const done=t["完成狀態"]==="是";
+    return `<div class="check-item ${done?"done":""}" onclick="toggleTodo('${bid["案件ID"]}','${esc(t["待辦項目"])}',${!done})">
+      <div class="check-box"></div>
+      <span class="check-text">${esc(t["待辦項目"])}</span>
+      <span class="check-deadline ${tdayCls(t["截止日期"],done)}">${done?"已完成":(t["截止日期"]||"—")}</span>
+    </div>`;
+  }).join(""):"<p style='color:var(--g4);font-size:12px'>尚無待辦事項</p>";
+
+  const contactHtml=(bid["承辦人姓名"]||bid["承辦人電話"])?
+    `<div class="contact-row">👤 <strong>承辦人：</strong>${esc(bid["承辦人姓名"])}
+      ${bid["承辦人電話"]?`&nbsp;|&nbsp; 📞 ${esc(bid["承辦人電話"])}`:""}
+      ${bid["承辦人信箱"]?`&nbsp;|&nbsp; ✉ ${esc(bid["承辦人信箱"])}`:""}
+    </div>`:"<p style='color:var(--g4);font-size:12px;padding:8px 0'>尚未填寫</p>";
+
+  const bidHtml=bids.length?`<table class="decision-table">
+    <thead><tr><th>廠商名稱</th><th>投標金額</th><th>結果</th></tr></thead>
+    <tbody>${bids.map(b=>`<tr><td class="${b["是否得標"]==="是"?"us":""}">${esc(b["廠商名稱"])}</td><td>${fmt(b["投標金額"])}</td><td class="${b["是否得標"]==="是"?"us":""}">${b["是否得標"]==="是"?"✓ 得標":"—"}</td></tr>`).join("")}</tbody>
+  </table>`:"<p style='color:var(--g4);font-size:12px;padding:8px 0'>尚無紀錄</p>";
+
+  return `<div class="bid-card" data-status="${esc(bid["狀態"])}" data-name="${esc(bid["案名"])}">
+    <div class="card-header" onclick="toggleCard(this)">
+      <span class="status-dot ${u}"></span>
+      <div class="card-title-block">
+        <div class="card-title">${esc(bid["案名"]||"（未命名）")}</div>
+        <div class="card-meta">
+          <span>🏛 ${esc(bid["機關完整名稱"])}</span>
+          ${bid["得標日"]?`<span>📅 得標 ${bid["得標日"]}</span>`:bid["截標日"]?`<span>📅 截標 ${bid["截標日"]}</span>`:""}
+        </div>
+      </div>
+      <div class="card-right">
+        <span class="urgent-badge ${bg.cls}">${bg.t}</span>
+        <div class="card-amount">${bid["決標金額"]?fmt(bid["決標金額"]):(bid["預算金額"]?"預算 "+fmt(bid["預算金額"]):"—")}</div>
+        <div class="progress-ring">
+          <svg viewBox="0 0 38 38" width="38" height="38">
+            <circle class="track" cx="19" cy="19" r="16"/>
+            <circle class="fill" cx="19" cy="19" r="16" stroke="${sc}" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/>
+          </svg>
+          <div class="progress-pct">${p}%</div>
+        </div>
+        <span class="chevron">▾</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <span class="status-tag ${stag}">${icon} ${bid["狀態"]}</span>
+      <div class="info-grid">
+        <div class="info-cell"><div class="info-label">案號</div><div class="info-value">${esc(bid["案件ID"])}</div></div>
+        <div class="info-cell"><div class="info-label">採購類型</div><div class="info-value">${esc(bid["採購類型"])}</div></div>
+        <div class="info-cell"><div class="info-label">決標金額</div><div class="info-value">${fmt(bid["決標金額"])}</div></div>
+        <div class="info-cell"><div class="info-label">履約期限</div><div class="info-value">${bid["履約期限"]||"—"}</div></div>
+        <div class="info-cell"><div class="info-label">印花稅</div>
+          <div class="info-value ${bid["印花稅已繳"]==="是"?"ok":""}">
+            ${bid["印花稅金額"]?fmt(bid["印花稅金額"]):"—"}${bid["印花稅已繳"]==="是"?" ✓":bid["印花稅金額"]?" ⚠ 未繳":""}
+          </div>
+        </div>
+        <div class="info-cell"><div class="info-label">保險</div>
+          <div class="info-value ${bid["保險狀態"]==="已投保"?"ok":""}">${esc(bid["保險種類"]||"—")} ${bid["保險狀態"]?"("+bid["保險狀態"]+")":""}</div>
+        </div>
+      </div>
+      <div class="section-title">履約待辦清單</div>
+      <div class="checklist">${todoHtml}</div>
+      <div class="section-title">機關聯絡資訊</div>
+      ${contactHtml}
+      <div class="section-title">附件文件</div>
+      <div class="attach-row">📁 Google Drive 資料夾
+        ${bid["Drive資料夾ID"]?`<a class="attach-link" href="https://drive.google.com/drive/folders/${bid["Drive資料夾ID"]}" target="_blank">開啟 ↗</a>`:`<span style="margin-left:auto;font-size:11px;color:var(--g4)">尚未設定</span>`}
+      </div>
+      <div class="section-title">決標紀錄</div>
+      ${bidHtml}
+      ${bid["備註"]?`<div class="section-title">備註</div><div class="notes-box">${esc(bid["備註"])}</div>`:""}
+      <div class="card-actions">
+        <button class="action-btn" onclick="loadData()">🔄 重新載入</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ── 互動 ── */
+function toggleCard(h){h.closest(".bid-card").classList.toggle("open")}
+
+async function toggleTodo(bidId,item,done){
+  const t=S.todos.find(t=>t["案件ID"]===bidId&&t["待辦項目"]===item);
+  if(t){t["完成狀態"]=done?"是":"否"; t["完成日期"]=done?new Date().toLocaleDateString("zh-TW"):""}
+  updateSummary(); renderCards();
+  try{
+    await scriptPost({action:"toggleTodo","案件ID":bidId,"待辦項目":item,done});
+    showToast(done?"✓ 已完成":"已取消完成","success");
+  }catch(e){
+    if(t) t["完成狀態"]=done?"否":"是";
+    updateSummary(); renderCards();
+    showToast("更新失敗："+e.message,"error");
+  }
+}
+
+function filterTab(btn,status){
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active"); S.filter=status; renderCards();
+}
+function filterSearch(v){S.search=v.trim(); renderCards();}
+
+/* ── 新增標案 ── */
+function openAddModal(){document.getElementById("add-modal").classList.add("open")}
+function closeModal(){document.getElementById("add-modal").classList.remove("open")}
+
+async function submitAddBid(){
+  const name=document.getElementById("f-name").value.trim();
+  const org=document.getElementById("f-org").value.trim();
+  const orgS=document.getElementById("f-org-short").value.trim();
+  if(!name||!org||!orgS){showToast("請填寫必填欄位（*）","error");return;}
+  const dl=document.getElementById("f-deadline").value;
+  const ce=document.getElementById("f-contract-end").value;
+  try{
+    showToast("新增中…");
+    const r=await scriptPost({
+      action:"addBid",
+      "案名":name,"機關完整名稱":org,"機關簡稱":orgS,
+      "年度":document.getElementById("f-year").value,
+      "採購類型":document.getElementById("f-type").value,
+      "狀態":document.getElementById("f-status").value,
+      "預算金額":document.getElementById("f-budget").value,
+      "決標金額":document.getElementById("f-awarded").value,
+      "截標日":dl?dl.replace(/-/g,"/"):"",
+      "履約期限":ce?ce.replace(/-/g,"/"):"",
+      "承辦人姓名":document.getElementById("f-contact-name").value,
+      "承辦人電話":document.getElementById("f-contact-tel").value,
+      "承辦人信箱":document.getElementById("f-contact-email").value,
+      "備註":document.getElementById("f-note").value,
+    });
+    closeModal();
+    showToast("✓ 標案新增成功："+r.id,"success");
+    await loadData();
+  }catch(e){showToast("新增失敗："+e.message,"error");}
+}
+
+/* ── Toast ── */
+let _tt;
+function showToast(msg,type=""){
+  const el=document.getElementById("toast");
+  el.textContent=msg; el.className="toast show "+(type||"");
+  clearTimeout(_tt); _tt=setTimeout(()=>el.className="toast",2800);
+}
+</script>
+</body>
+</html>
